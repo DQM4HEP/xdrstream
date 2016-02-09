@@ -1,0 +1,15 @@
+##############################################################################
+# this file is parsed when FIND_PACKAGE is called with version argument
+#
+# @author Jan Engels, Desy IT
+# Modified for xdrstream use by : R. Ete
+##############################################################################
+
+
+SET( ${PACKAGE_FIND_NAME}_VERSION_MAJOR @xdrstream_VERSION_MAJOR@ )
+SET( ${PACKAGE_FIND_NAME}_VERSION_MINOR @xdrstream_VERSION_MINOR@ )
+SET( ${PACKAGE_FIND_NAME}_VERSION_PATCH @xdrstream_VERSION_PATCH@ )
+
+INCLUDE( "@CMAKE_INSTALL_PREFIX@/cmake/MacroCheckPackageVersion.cmake" )
+CHECK_PACKAGE_VERSION( ${PACKAGE_FIND_NAME} @xdrstream_VERSION@ )
+

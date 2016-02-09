@@ -1,0 +1,15 @@
+#ifndef xdrstreamConfig_H
+#define xdrstreamConfig_H
+
+// version macros
+#define xdrstream_MAJOR_VERSION @xdrstream_VERSION_MAJOR@
+#define xdrstream_MINOR_VERSION @xdrstream_VERSION_MINOR@
+#define xdrstream_PATCH_LEVEL @xdrstream_VERSION_PATCH@
+
+#define xdrstream_VERSION_STR "@xdrstream_VERSION_MAJOR@.@xdrstream_VERSION_MINOR@.@xdrstream_VERSION_PATCH@"
+
+#define xdrstream_VERSION_GE( MAJV , MINV , PLEV )  \
+     ( (xdrstream_MAJOR_VERSION > MAJV) || ( (xdrstream_MAJOR_VERSION == MAJV) && (xdrstream_MINOR_VERSION > MINV) ) \
+  || ( (xdrstream_MAJOR_VERSION == MAJV) && (xdrstream_MINOR_VERSION == MINV) && (xdrstream_PATCH_LEVEL >= PLEV) ) )
+
+#endif // xdrstreamConfig_H

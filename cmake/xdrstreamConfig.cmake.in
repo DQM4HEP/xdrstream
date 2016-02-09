@@ -1,0 +1,85 @@
+##############################################################################
+# cmake configuration file for xdrstream
+#
+# requires:
+#   MacroCheckPackageLibs.cmake for checking package libraries
+#   MacroExportPackageDeps.cmake for exporting package dependencies
+#
+# returns following variables:
+#
+#   xdrstream_FOUND      : set to TRUE if xdrstream found
+#       if FIND_PACKAGE called with REQUIRED and COMPONENTS arguments
+#       xdrstream_FOUND is only set to TRUE if ALL components are also found
+#       if REQUIRED is NOT set components may or may not be available
+#
+#   xdrstream_ROOT       : path to this xdrstream installation
+#   xdrstream_VERSION    : package version
+#   xdrstream_LIBRARIES  : list of xdrstream libraries (NOT including COMPONENTS)
+#   xdrstream_INCLUDE_DIRS  : list of paths to be used with INCLUDE_DIRECTORIES
+#   xdrstream_LIBRARY_DIRS  : list of paths to be used with LINK_DIRECTORIES
+#   xdrstream_COMPONENT_LIBRARIES      : list of xdrstream component libraries
+#   xdrstream_${COMPONENT}_FOUND       : set to TRUE or FALSE for each library
+#   xdrstream_${COMPONENT}_LIBRARY     : path to individual libraries
+#   xdrstream_${COMPONENT}_LIB_DEPENDS : individual library dependencies
+#
+# @author Jan Engels, Desy
+# Modified for xdrstream use by : Remi Ete
+##############################################################################
+
+SET( xdrstream_ROOT "@CMAKE_INSTALL_PREFIX@" )
+SET( xdrstream_VERSION "@xdrstream_VERSION@" )
+
+
+# ---------- include dirs -----------------------------------------------------
+# do not store find results in cache
+SET( xdrstream_INCLUDE_DIRS xdrstream_INCLUDE_DIRS-NOTFOUND )
+MARK_AS_ADVANCED( xdrstream_INCLUDE_DIRS )
+
+FIND_PATH( xdrstream_INCLUDE_DIRS
+	NAMES xdrstreamConfig.h
+	PATHS @CMAKE_INSTALL_PREFIX@/include/
+	NO_DEFAULT_PATH
+)
+
+
+
+# ---------- libraries --------------------------------------------------------
+INCLUDE( "@CMAKE_INSTALL_PREFIX@/cmake/MacroCheckPackageLibs.cmake" )
+
+# only standard libraries should be passed as arguments to CHECK_PACKAGE_LIBS
+# additional components are set by cmake in variable PKG_FIND_COMPONENTS
+# first argument should be the package name
+CHECK_PACKAGE_LIBS( xdrstream xdrstream )
+
+
+# ---------- dependencies -----------------------------------------------------
+INCLUDE( "@CMAKE_INSTALL_PREFIX@/cmake/MacroExportPackageDeps.cmake" )
+# exports following package dependencies (if set)
+# first argument of macro should be the package name
+SET( xdrstream_DEPENDS_INCLUDE_DIRS  @xdrstream_DEPENDS_INCLUDE_DIRS@ )
+SET( xdrstream_DEPENDS_LIBRARY_DIRS  @xdrstream_DEPENDS_LIBRARY_DIRS@ )
+SET( xdrstream_DEPENDS_LIBRARIES  @xdrstream_DEPENDS_LIBRARIES@ )
+EXPORT_PACKAGE_DEPENDENCIES( xdrstream )
+
+
+
+# ---------- final checking ---------------------------------------------------
+INCLUDE( FindPackageHandleStandardArgs )
+# set xdrstream_FOUND to TRUE if all listed variables are TRUE and not empty
+# xdrstream_COMPONENT_VARIABLES will be set if FIND_PACKAGE is called with REQUIRED argument
+FIND_PACKAGE_HANDLE_STANDARD_ARGS( xdrstream DEFAULT_MSG xdrstream_ROOT xdrstream_INCLUDE_DIRS xdrstream_LIBRARIES ${xdrstream_COMPONENT_VARIABLES} )
+
+SET( xdrstream_FOUND ${xdrstream_FOUND} )
+
+
+
+# ---------- definitions ------------------------------------------------------
+IF( xdrstream_FOUND )
+
+    IF( CMAKE_BUILD_TYPE STREQUAL "Debug" OR
+        CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" )
+        MARK_AS_ADVANCED( xdrstream_DEFINITIONS )
+    ENDIF()
+
+ENDIF()
+
