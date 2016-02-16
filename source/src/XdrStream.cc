@@ -158,6 +158,62 @@ Status XdrStream::readRecord(Record *&pRecord, IODevice *pDevice)
 
 //----------------------------------------------------------------------------------------------------
 
+Status XdrStream::readRecord(const std::string &recordName, Record *&pRecord, IODevice *pDevice)
+{
+	pRecord = NULL;
+
+	if( NULL == pDevice )
+		return XDR_INVALID_PARAMETER;
+
+	// device must be opened
+	if( ! pDevice->isOpened() )
+		return XDR_DEVICE_NOT_OPENED;
+
+	// device must be readable
+	if( ! pDevice->isReadable() )
+		return XDR_IO_ERROR;
+
+	// get start of record position
+	xdr_size_t sorPosition = pDevice->getPosition();
+
+	// read record header
+	Header recordHeader;
+	XDR_STREAM( pDevice->recordHeader( XDR_READ_STREAM , recordHeader ) )
+
+	// check for record marker
+	if(recordHeader.m_marker != recordMarker)
+	{
+		uint64_t eorPosition = sorPosition + recordHeader.m_length;
+		pDevice->seek(eorPosition);
+
+		return XDR_UNEXPECTED_MARKER;
+	}
+
+	// check required for record name
+	if( recordHeader.m_name != recordName )
+	{
+		uint64_t eorPosition = sorPosition + recordHeader.m_length;
+		pDevice->seek(eorPosition);
+
+		return XDR_SUCCESS;
+	}
+
+	pRecord = this->getRecord(recordHeader.m_name);
+
+	if( ! pRecord )
+		return XDR_RECORD_NOT_FOUND;
+
+	// read the record
+	XDR_STREAM( pRecord->readRecord(pDevice) )
+
+	// and perform pointer relocation
+	XDR_STREAM( pDevice->performPointerMapping() )
+
+	return XDR_SUCCESS;
+}
+
+//----------------------------------------------------------------------------------------------------
+
 Status XdrStream::skipNextRecord(IODevice *pDevice)
 {
 	if( NULL == pDevice )
@@ -185,6 +241,57 @@ Status XdrStream::skipNextRecord(IODevice *pDevice)
 	uint64_t eorPosition = sorPosition + recordHeader.m_length;
 
 	return pDevice->seek(eorPosition);
+}
+
+//----------------------------------------------------------------------------------------------------
+
+Status XdrStream::skipRecordsUntill(const std::string &recordName, IODevice *pDevice)
+{
+	if( NULL == pDevice )
+		return XDR_INVALID_PARAMETER;
+
+	// device must be opened
+	if( ! pDevice->isOpened() )
+		return XDR_DEVICE_NOT_OPENED;
+
+	// device must be readable
+	if( ! pDevice->isReadable() )
+		return XDR_IO_ERROR;
+
+	while(1)
+	{
+		// get start of record position
+		xdr_size_t sorPosition = pDevice->getPosition();
+
+		// read record header
+		Header recordHeader;
+		XDR_STREAM( pDevice->recordHeader( XDR_READ_STREAM , recordHeader ) )
+
+		// check for record marker
+		if(recordHeader.m_marker != recordMarker)
+		{
+			XDR_STREAM( pDevice->seek(sorPosition) )
+			return XDR_UNEXPECTED_MARKER;
+		}
+
+		uint64_t eorPosition = sorPosition + recordHeader.m_length;
+
+		// check required for record name
+		if( recordHeader.m_name == recordName )
+		{
+			XDR_STREAM( pDevice->seek(sorPosition) )
+			return XDR_SUCCESS;
+		}
+		// else skip the record
+		else
+		{
+			uint64_t eorPosition = sorPosition + recordHeader.m_length;
+			XDR_STREAM( pDevice->seek(eorPosition) )
+			continue;
+		}
+	}
+
+	return XDR_SUCCESS;
 }
 
 //----------------------------------------------------------------------------------------------------

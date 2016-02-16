@@ -67,11 +67,31 @@ public:
 	Status readRecord(Record *&pRecord, IODevice *pDevice);
 
 	/**
+	 *  @brief  Read the next record from the io device.
+	 *          The record name must be the one specified else it is skipped
+	 *
+	 *  @param  recordName the target record name
+	 *  @param  pRecord the record pointer to receive
+	 *  @param  pDevice the device to read from
+	 */
+	Status readRecord(const std::string &recordName, Record *&pRecord, IODevice *pDevice);
+
+	/**
 	 *  @brief  Skip the next record in the io device
 	 *
 	 *  @param  pDevice the io device to skip the next record
 	 */
 	Status skipNextRecord(IODevice *pDevice);
+
+	/**
+	 *  @brief  Skip the next records until recordName appears.
+	 *          When the target record name is found, the device cursor
+	 *          is set just before the record, ready to read it
+	 *
+	 *  @param  recordName the target record name
+	 *  @param  pDevice the device to read from
+	 */
+	Status skipRecordsUntill(const std::string &recordName, IODevice *pDevice);
 
 	/**
 	 *  @brief  Create a record with the target name.
