@@ -73,7 +73,7 @@ class XdrStream;
 #define XDR_TESTBIT(n,i) ((bool)(((n) & i) != 0))
 
 // macro to simplify api calls
-#define XDR_STREAM( Operation ) { Status status = Operation; if( ! XDR_TESTBIT( status, XDR_SUCCESS ) ) return status; }
+#define XDR_STREAM( Operation ) { xdrstream::Status status = Operation; if( ! XDR_TESTBIT( status, xdrstream::XDR_SUCCESS ) ) return status; }
 
 // various typedefs
 typedef uint64_t                     xdr_size_t;
