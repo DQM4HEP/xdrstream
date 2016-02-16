@@ -69,7 +69,7 @@ protected:
 	/**
 	 *  @brief  Perform read / write operation
 	 */
-	virtual bool stream(StreamingMode mode, IODevice *pDevice, xdr_version_t version) = 0;
+	virtual Status stream(StreamingMode mode, IODevice *pDevice, xdr_version_t version) = 0;
 
 	/**
 	 *  @brief  Get the block version. Written in the device
