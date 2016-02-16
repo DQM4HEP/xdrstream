@@ -24,10 +24,6 @@ IF( INSTALL_DOC )
 ENDIF()
 
 ###############################
-# Find Threads or multithreading.
-FIND_PACKAGE( Threads REQUIRED )
-
-###############################
 # Generate xdrstreamConfig.h 
 CONFIGURE_FILE( "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.h.cmake.in"
     "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}Config.h" @ONLY )
