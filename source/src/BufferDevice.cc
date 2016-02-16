@@ -170,7 +170,7 @@ xdr_size_t BufferDevice::getBufferSize() const
 
 void BufferDevice::setExpandSize(xdr_size_t size)
 {
-	if( 0 == size )
+	if( 1024 > size )
 		return;
 
 	m_expandSize = size;
@@ -318,14 +318,19 @@ Status BufferDevice::readCString(char *&pCString, xdr_size_t &strLen)
 	pCString = new char [ strLen + 1 ];
 	pCString[ strLen ] = '\0';
 
-	// copy data !
-	memcpy(pCString, m_pBufferPosition, size);
+	if( 0 != strLen )
+	{
+		// copy data !
+		memcpy(pCString, m_pBufferPosition, size);
 
-	// increment the buffer position
-	m_pBufferPosition += sizeof( size );
+		// increment the buffer position
+		m_pBufferPosition += sizeof( size );
+	}
 
 	return XDR_SUCCESS;
 }
+
+//----------------------------------------------------------------------------------------------------
 
 Status BufferDevice::readStaticArray(void *pAddress, xdr_size_t arraySize, xdr_size_t elementSize)
 {
@@ -361,16 +366,21 @@ Status BufferDevice::readStaticArray(void *pAddress, xdr_size_t arraySize, xdr_s
 		return XDR_EOF;
 	}
 
-	// ready to read !
-	// copy data to user variable
-	memcpy(pAddress, m_pBufferPosition, totalSize);
+	if( 0 != totalSize )
+	{
+		// ready to read !
+		// copy data to user variable
+		memcpy(pAddress, m_pBufferPosition, totalSize);
 
-	// increment the buffer position
-	m_pBufferPosition += sizeof( totalSize );
+		// increment the buffer position
+		m_pBufferPosition += sizeof( totalSize );
+	}
 
 	return XDR_SUCCESS;
 
 }
+
+//----------------------------------------------------------------------------------------------------
 
 Status BufferDevice::readDynamicArray(void *&pAddress, xdr_size_t &arraySize, xdr_size_t elementSize, xdr_allocator allocator)
 {
@@ -406,6 +416,10 @@ Status BufferDevice::readDynamicArray(void *&pAddress, xdr_size_t &arraySize, xd
 		return XDR_EOF;
 	}
 
+	// return if nothing more to read
+	if( 0 == totalSize )
+		return XDR_SUCCESS;
+
 	pAddress = allocator( readArraySize );
 
 	if( ! pAddress )
@@ -421,6 +435,91 @@ Status BufferDevice::readDynamicArray(void *&pAddress, xdr_size_t &arraySize, xd
 
 	// increment the buffer position
 	m_pBufferPosition += sizeof( totalSize );
+
+	return XDR_SUCCESS;
+}
+
+//----------------------------------------------------------------------------------------------------
+
+Status BufferDevice::writeData(const void *pAddress, xdr_size_t dataSize)
+{
+	// must be in write mode (or append)
+	if( ! this->isWritable() )
+		return XDR_IO_ERROR;
+
+	// reached end of buffer ?
+	if( this->getBufferSize() - this->getPosition() < dataSize + sizeof(xdr_size_t) )
+	{
+		xdr_size_t reallocationSize = std::max( dataSize + sizeof(xdr_size_t), this->getExpandSize() );
+		XDR_STREAM( this->expandBuffer(reallocationSize) )
+	}
+
+	// write size and move cursor
+	m_pBufferPosition[0] = dataSize;
+	m_pBufferPosition += sizeof(xdr_size_t);
+
+	// write data if any and move cursor
+	if( 0 != dataSize )
+	{
+		memcpy( m_pBufferPosition , pAddress , dataSize );
+		m_pBufferPosition += dataSize;
+	}
+
+	return XDR_SUCCESS;
+}
+
+//----------------------------------------------------------------------------------------------------
+
+Status BufferDevice::writeArray(const void *pAddress, xdr_size_t arraySize, xdr_size_t elementSize)
+{
+	// must be in write mode (or append)
+	if( ! this->isWritable() )
+		return XDR_IO_ERROR;
+
+	// reached end of buffer ?
+	if( this->getBufferSize() - this->getPosition() < arraySize*elementSize + sizeof(xdr_size_t) )
+	{
+		xdr_size_t reallocationSize = std::max( arraySize*elementSize + sizeof(xdr_size_t), this->getExpandSize() );
+		XDR_STREAM( this->expandBuffer(reallocationSize) )
+	}
+
+	// write array size and move cursor
+	m_pBufferPosition[0] = arraySize;
+	m_pBufferPosition += sizeof(xdr_size_t);
+
+	// write element size and move cursor
+	m_pBufferPosition[0] = elementSize;
+	m_pBufferPosition += sizeof(xdr_size_t);
+
+	// write data if any and move cursor
+	if( 0 != arraySize )
+	{
+		memcpy( m_pBufferPosition , pAddress , arraySize*elementSize );
+		m_pBufferPosition += arraySize*elementSize;
+	}
+
+	return XDR_SUCCESS;
+}
+
+//----------------------------------------------------------------------------------------------------
+
+Status BufferDevice::writeEmptyBytes(xdr_size_t nBytes)
+{
+	if( 0 == nBytes )
+		return XDR_INVALID_PARAMETER;
+
+	// must be in write mode (or append)
+	if( ! this->isWritable() )
+		return XDR_IO_ERROR;
+
+	// reached end of buffer ?
+	if( this->getBufferSize() - this->getPosition() < nBytes )
+	{
+		xdr_size_t reallocationSize = std::max( nBytes , this->getExpandSize() );
+		XDR_STREAM( this->expandBuffer(reallocationSize) )
+	}
+
+	memset( m_pBufferPosition , 0 , nBytes );
 
 	return XDR_SUCCESS;
 }
