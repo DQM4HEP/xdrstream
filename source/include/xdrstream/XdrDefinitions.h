@@ -73,14 +73,45 @@ class XdrStream;
 #define XDR_TESTBIT(n,i) ((bool)(((n) & i) != 0))
 
 // macro to simplify api calls
-#define XDR_STREAM( Operation ) { xdrstream::Status status = Operation; if( ! XDR_TESTBIT( status, xdrstream::XDR_SUCCESS ) ) return status; }
+
+#ifdef XDRLCIO_DEBUG_MODE
+
+
+#define XDR_STREAM( Operation ) \
+{ \
+	xdrstream::Status status = Operation; \
+	if( ! XDR_TESTBIT( status, xdrstream::XDR_SUCCESS ) ) \
+	{ \
+		std::cerr << "XDR_STREAM returned on line " << __LINE__ << " of file " << __FILE__ << std::endl; \
+		return status; \
+	} \
+}
+
+#define DEBUG_PRINT( message ) std::cout << message << std::endl;
+#define DEBUG_DO( Operation ) Operation
+
+#else
+
+
+#define XDR_STREAM( Operation ) \
+{ \
+	xdrstream::Status status = Operation; \
+	if( ! XDR_TESTBIT( status, xdrstream::XDR_SUCCESS ) ) \
+		return status; \
+}
+
+#define DEBUG_PRINT( message )
+#define DEBUG_DO( Operation )
+
+#endif
+
 
 // various typedefs
-typedef uint64_t                     xdr_size_t;
+typedef uint32_t                     xdr_size_t;
 typedef uint32_t                     xdr_word_t;
 typedef uint32_t                     xdr_version_t;
 typedef int64_t                      xdr_addr_t;
-typedef int64_t                      xdr_marker_t;
+typedef int32_t                      xdr_marker_t;
 
 typedef std::map<std::string, Block *>    BlockMap;
 typedef std::map<std::string, Record *>   RecordMap;
@@ -95,9 +126,9 @@ struct xdr_allocator_helper
 };
 
 // marker definitions
-static const xdr_marker_t blockMarker     = 0xabacadab;
-static const xdr_marker_t recordMarker    = 0xabacabac;
-static const xdr_marker_t undefinedMarker = 0xabababab;
+static const xdr_marker_t undefinedMarker = 1000;
+static const xdr_marker_t blockMarker     = 1001;
+static const xdr_marker_t recordMarker    = 1002;
 
 /**
  *  @brief  OpenMode enum
@@ -149,6 +180,60 @@ enum StatusCode
 	XDR_ALREADY_PRESENT    = XDR_BIT(12),
 	XDR_DEVICE_NOT_OPENED  = XDR_BIT(13)
 };
+
+//----------------------------------------------------------------------------------------------------
+
+inline void printStatus( Status status )
+{
+	std::cout << "Status : ";
+
+	for( int i=0 ; i<14 ; i++ )
+	{
+		if( XDR_TESTBIT( status, XDR_BIT(i) ) )
+		{
+			std::cout << i << " ";
+		}
+	}
+
+	std::cout << std::endl;
+}
+
+//----------------------------------------------------------------------------------------------------
+
+inline void printRawBuffer(char *pBuffer, xdr_size_t bufferSize , uint32_t returnLine = 10)
+{
+	std::cout << "buffer address : " << (void *) pBuffer << " size : " << bufferSize << std::endl;
+
+	for(int i=0 ; i<bufferSize ; i++)
+	{
+		printf("%2x", pBuffer[i]);
+
+		if(i%returnLine == 0 && i != 0)
+			std::cout << std::endl;
+	}
+
+	std::cout << std::endl;
+}
+
+//----------------------------------------------------------------------------------------------------
+
+inline void printSubRawBuffer(char *pBuffer, xdr_size_t from, xdr_size_t to, uint32_t returnLine = 10)
+{
+	std::cout << "(from-to) buffer address : " << (void *) pBuffer << std::endl;
+
+	for(xdr_size_t i=from ; i<to ; i++)
+	{
+		printf("%2x", pBuffer[i]);
+
+		if(i%returnLine == 0 && i != 0)
+			std::cout << std::endl;
+	}
+
+	std::cout << std::endl;
+}
+
+//----------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------
 
 /**
  *  @brief  Header structure.
