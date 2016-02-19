@@ -275,10 +275,11 @@ Status BufferDevice::readData(void *pAddress, xdr_size_t dataSize)
 		return XDR_EOF;
 
 	// read size of next value to read and check consistency with user input
-	xdr_size_t size = m_pBufferPosition[0] & 0xFFFFFF;
+	xdr_size_t size = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
 
+	// size 0 means no more data
 	if( size != dataSize )
-		return XDR_IO_ERROR;
+		return XDR_EOF;
 
 	// increment the buffer position
 	m_pBufferPosition += sizeof( xdr_size_t );
@@ -287,7 +288,7 @@ Status BufferDevice::readData(void *pAddress, xdr_size_t dataSize)
 	memcpy(pAddress, m_pBufferPosition, size);
 
 	// increment the buffer position
-	m_pBufferPosition += sizeof( size );
+	m_pBufferPosition += size;
 
 	return XDR_SUCCESS;
 }
@@ -304,7 +305,7 @@ Status BufferDevice::readCString(char *&pCString, xdr_size_t &strLen)
 	if( this->getBufferSize() - this->getPosition() < sizeof(xdr_size_t) )
 		return XDR_EOF;
 
-	xdr_size_t size = m_pBufferPosition[0] & 0xFFFFFF;
+	xdr_size_t size = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
 	strLen = size;
 
 	// check again for EOF
@@ -324,7 +325,7 @@ Status BufferDevice::readCString(char *&pCString, xdr_size_t &strLen)
 		memcpy(pCString, m_pBufferPosition, size);
 
 		// increment the buffer position
-		m_pBufferPosition += sizeof( size );
+		m_pBufferPosition += size;
 	}
 
 	return XDR_SUCCESS;
@@ -345,10 +346,10 @@ Status BufferDevice::readStaticArray(void *pAddress, xdr_size_t arraySize, xdr_s
 	// get initial cursor position in case of io error
 	xdr_size_t initialPosition = this->getPosition();
 
-	xdr_size_t readArraySize = m_pBufferPosition[0] & 0xFFFFFF;
+	xdr_size_t readArraySize = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
 	m_pBufferPosition += sizeof( xdr_size_t );
 
-	xdr_size_t readElementSize = m_pBufferPosition[0] & 0xFFFFFF;
+	xdr_size_t readElementSize = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
 	m_pBufferPosition += sizeof( xdr_size_t );
 
 	if( arraySize != readArraySize || readElementSize != elementSize )
@@ -373,7 +374,7 @@ Status BufferDevice::readStaticArray(void *pAddress, xdr_size_t arraySize, xdr_s
 		memcpy(pAddress, m_pBufferPosition, totalSize);
 
 		// increment the buffer position
-		m_pBufferPosition += sizeof( totalSize );
+		m_pBufferPosition += totalSize;
 	}
 
 	return XDR_SUCCESS;
@@ -395,10 +396,10 @@ Status BufferDevice::readDynamicArray(void *&pAddress, xdr_size_t &arraySize, xd
 	// get initial cursor position in case of io error
 	xdr_size_t initialPosition = this->getPosition();
 
-	xdr_size_t readArraySize = m_pBufferPosition[0] & 0xFFFFFF;
+	xdr_size_t readArraySize = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
 	m_pBufferPosition += sizeof( xdr_size_t );
 
-	xdr_size_t readElementSize = m_pBufferPosition[0] & 0xFFFFFF;
+	xdr_size_t readElementSize = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
 	m_pBufferPosition += sizeof( xdr_size_t );
 
 	if( readElementSize != elementSize )
@@ -434,7 +435,7 @@ Status BufferDevice::readDynamicArray(void *&pAddress, xdr_size_t &arraySize, xd
 	arraySize = readArraySize;
 
 	// increment the buffer position
-	m_pBufferPosition += sizeof( totalSize );
+	m_pBufferPosition += totalSize;
 
 	return XDR_SUCCESS;
 }
@@ -455,7 +456,7 @@ Status BufferDevice::writeData(const void *pAddress, xdr_size_t dataSize)
 	}
 
 	// write size and move cursor
-	m_pBufferPosition[0] = dataSize;
+	( (xdr_size_t *) m_pBufferPosition )[0] = dataSize;
 	m_pBufferPosition += sizeof(xdr_size_t);
 
 	// write data if any and move cursor
@@ -484,11 +485,11 @@ Status BufferDevice::writeArray(const void *pAddress, xdr_size_t arraySize, xdr_
 	}
 
 	// write array size and move cursor
-	m_pBufferPosition[0] = arraySize;
+	( (xdr_size_t *) m_pBufferPosition )[0] = arraySize;
 	m_pBufferPosition += sizeof(xdr_size_t);
 
 	// write element size and move cursor
-	m_pBufferPosition[0] = elementSize;
+	( (xdr_size_t *) m_pBufferPosition )[0] = elementSize;
 	m_pBufferPosition += sizeof(xdr_size_t);
 
 	// write data if any and move cursor
@@ -520,6 +521,59 @@ Status BufferDevice::writeEmptyBytes(xdr_size_t nBytes)
 	}
 
 	memset( m_pBufferPosition , 0 , nBytes );
+	m_pBufferPosition += nBytes;
+
+	return XDR_SUCCESS;
+}
+
+//----------------------------------------------------------------------------------------------------
+
+Status BufferDevice::recordHeader(StreamingMode mode, Header &recordHeader)
+{
+	if( XDR_WRITE_STREAM == mode )
+	{
+		XDR_STREAM( this->write( & recordHeader.m_optionWord ) )
+		XDR_STREAM( this->write( & recordHeader.m_headerLength ) )
+		XDR_STREAM( this->write( & recordHeader.m_marker ) )
+		XDR_STREAM( this->write( & recordHeader.m_length ) )
+		XDR_STREAM( this->write( & recordHeader.m_version ) )
+		XDR_STREAM( this->write( & recordHeader.m_name ) )
+	}
+	else if( XDR_READ_STREAM == mode )
+	{
+		XDR_STREAM( this->read( & recordHeader.m_optionWord ) )
+		XDR_STREAM( this->read( & recordHeader.m_headerLength ) )
+		XDR_STREAM( this->read( & recordHeader.m_marker ) )
+		XDR_STREAM( this->read( & recordHeader.m_length ) )
+		XDR_STREAM( this->read( & recordHeader.m_version ) )
+		XDR_STREAM( this->read( & recordHeader.m_name ) )
+	}
+
+	return XDR_SUCCESS;
+}
+
+//----------------------------------------------------------------------------------------------------
+
+Status BufferDevice::blockHeader(StreamingMode mode, Header &blockHeader)
+{
+	if( XDR_WRITE_STREAM == mode )
+	{
+		XDR_STREAM( this->write( & blockHeader.m_optionWord ) )
+		XDR_STREAM( this->write( & blockHeader.m_headerLength ) )
+		XDR_STREAM( this->write( & blockHeader.m_marker ) )
+		XDR_STREAM( this->write( & blockHeader.m_length ) )
+		XDR_STREAM( this->write( & blockHeader.m_version ) )
+		XDR_STREAM( this->write( & blockHeader.m_name ) )
+	}
+	else if( XDR_READ_STREAM == mode )
+	{
+		XDR_STREAM( this->read( & blockHeader.m_optionWord ) )
+		XDR_STREAM( this->read( & blockHeader.m_headerLength ) )
+		XDR_STREAM( this->read( & blockHeader.m_marker ) )
+		XDR_STREAM( this->read( & blockHeader.m_length ) )
+		XDR_STREAM( this->read( & blockHeader.m_version ) )
+		XDR_STREAM( this->read( & blockHeader.m_name ) )
+	}
 
 	return XDR_SUCCESS;
 }
