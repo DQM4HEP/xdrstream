@@ -133,14 +133,12 @@ Status Record::readRecord(IODevice *pDevice)
 	{
 		Header blockHeader;
 
+		xdr_size_t sobhPosition = pDevice->getPosition();
+
 		// Read the block header. In case of error, this function is assumed to
 		// reset the device pointer to the correct position. Else the position of the
 		// device should be just after the block header
 		Status status = pDevice->blockHeader( XDR_READ_STREAM , blockHeader );
-
-		// end of record ?
-		if( XDR_TESTBIT( status , XDR_EOR  ) )
-			break;
 
 		// end of file (io device) ?
 		if( XDR_TESTBIT( status , XDR_EOF ) )
@@ -150,9 +148,12 @@ Status Record::readRecord(IODevice *pDevice)
 		if( ! XDR_TESTBIT( status , XDR_SUCCESS ) )
 			return status;
 
-		// unexpected marker while reading !
+		// end of block reading if marker is not a block marker
 		if( blockHeader.m_marker != blockMarker )
-			return XDR_UNEXPECTED_MARKER;
+		{
+			XDR_STREAM( pDevice->seek(sobhPosition) )
+			return XDR_SUCCESS;
+		}
 
 		// get the associated block from the xdr stream
 		BlockMap::iterator iter = m_blockMap.find( blockHeader.m_name );
@@ -192,9 +193,6 @@ Status Record::writeRecord(IODevice *pDevice)
 
 		// compute the header length
 		blockHeader.m_headerLength = startOfBlockPosition - startOfBlockHeaderPosition;
-
-		// write empty bytes as a placeholder for the block header
-		XDR_STREAM( pDevice->writeEmptyBytes( blockHeader.m_length ) )
 
 		// write the data block
 		XDR_STREAM( iter->second->stream( XDR_WRITE_STREAM , pDevice , blockHeader.m_version ) )
