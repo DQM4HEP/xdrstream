@@ -26,7 +26,7 @@ ENDIF()
 ###############################
 # Generate xdrstreamConfig.h 
 CONFIGURE_FILE( "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.h.cmake.in"
-    "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}Config.h" @ONLY )
+    "${PROJECT_SOURCE_DIR}/source/include/${PROJECT_NAME}Config.h" @ONLY )
 
 ###############################
 # include directories
