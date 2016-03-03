@@ -275,7 +275,7 @@ Status BufferDevice::readData(void *pAddress, xdr_size_t dataSize)
 		return XDR_EOF;
 
 	// read size of next value to read and check consistency with user input
-	xdr_size_t size = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
+	xdr_size_t size = ( ((xdr_size_t*) m_pBufferPosition )[0] );
 
 	// size 0 means no more data
 	if( size != dataSize )
@@ -305,7 +305,7 @@ Status BufferDevice::readCString(char *&pCString, xdr_size_t &strLen)
 	if( this->getBufferSize() - this->getPosition() < sizeof(xdr_size_t) )
 		return XDR_EOF;
 
-	xdr_size_t size = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
+	xdr_size_t size = ( ((xdr_size_t*) m_pBufferPosition )[0] );
 	strLen = size;
 
 	// check again for EOF
@@ -346,10 +346,10 @@ Status BufferDevice::readStaticArray(void *pAddress, xdr_size_t arraySize, xdr_s
 	// get initial cursor position in case of io error
 	xdr_size_t initialPosition = this->getPosition();
 
-	xdr_size_t readArraySize = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
+	xdr_size_t readArraySize = ( ((xdr_size_t*) m_pBufferPosition )[0] );
 	m_pBufferPosition += sizeof( xdr_size_t );
 
-	xdr_size_t readElementSize = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
+	xdr_size_t readElementSize = ( ((xdr_size_t*) m_pBufferPosition )[0] );
 	m_pBufferPosition += sizeof( xdr_size_t );
 
 	if( arraySize != readArraySize || readElementSize != elementSize )
@@ -396,10 +396,10 @@ Status BufferDevice::readDynamicArray(void *&pAddress, xdr_size_t &arraySize, xd
 	// get initial cursor position in case of io error
 	xdr_size_t initialPosition = this->getPosition();
 
-	xdr_size_t readArraySize = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
+	xdr_size_t readArraySize = ( ((xdr_size_t*) m_pBufferPosition)[0] );
 	m_pBufferPosition += sizeof( xdr_size_t );
 
-	xdr_size_t readElementSize = ( (xdr_size_t) m_pBufferPosition[0] ) & 0xFFFFFF;
+	xdr_size_t readElementSize = ( ((xdr_size_t*) m_pBufferPosition )[0] );
 	m_pBufferPosition += sizeof( xdr_size_t );
 
 	if( readElementSize != elementSize )
@@ -491,6 +491,7 @@ Status BufferDevice::writeArray(const void *pAddress, xdr_size_t arraySize, xdr_
 	// write element size and move cursor
 	( (xdr_size_t *) m_pBufferPosition )[0] = elementSize;
 	m_pBufferPosition += sizeof(xdr_size_t);
+
 
 	// write data if any and move cursor
 	if( 0 != arraySize )
