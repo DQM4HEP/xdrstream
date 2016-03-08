@@ -28,7 +28,7 @@
 
 #include "xdrstream/Record.h"
 #include "xdrstream/Block.h"
-#include "xdrstream/XdrStream.h"
+#include "xdrstream/XdrStreamInterface.h"
 #include "xdrstream/IODevice.h"
 
 namespace xdrstream

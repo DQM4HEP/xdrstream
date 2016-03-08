@@ -32,7 +32,7 @@
 #include "xdrstream/XdrDefinitions.h"
 
 // xdrstream api
-#include "xdrstream/XdrStream.h"
+#include "xdrstream/XdrStreamInterface.h"
 #include "xdrstream/IODevice.h"
 #include "xdrstream/BufferDevice.h"
 #include "xdrstream/FileDevice.h"

@@ -27,7 +27,7 @@
 
 
 #include "xdrstream/Block.h"
-#include "xdrstream/XdrStream.h"
+#include "xdrstream/XdrStreamInterface.h"
 
 namespace xdrstream
 {
