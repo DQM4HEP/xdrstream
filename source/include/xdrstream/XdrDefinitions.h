@@ -37,6 +37,7 @@
 #include <_types/_uint32_t.h>
 #include <_types/_uint64_t.h>
 #include <sys/_types/_int16_t.h>
+#include <sys/_types/_int32_t.h>
 #include <sys/_types/_int64_t.h>
 #else
 #include <stdint.h>
