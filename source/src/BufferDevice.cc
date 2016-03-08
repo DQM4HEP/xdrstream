@@ -451,7 +451,7 @@ Status BufferDevice::writeData(const void *pAddress, xdr_size_t dataSize)
 	// reached end of buffer ?
 	if( this->getBufferSize() - this->getPosition() < dataSize + sizeof(xdr_size_t) )
 	{
-		xdr_size_t reallocationSize = std::max( dataSize + sizeof(xdr_size_t), this->getExpandSize() );
+		xdr_size_t reallocationSize = std::max<unsigned long>( dataSize + sizeof(xdr_size_t), this->getExpandSize() );
 		XDR_STREAM( this->expandBuffer(reallocationSize) )
 	}
 
@@ -480,7 +480,7 @@ Status BufferDevice::writeArray(const void *pAddress, xdr_size_t arraySize, xdr_
 	// reached end of buffer ?
 	if( this->getBufferSize() - this->getPosition() < arraySize*elementSize + sizeof(xdr_size_t) )
 	{
-		xdr_size_t reallocationSize = std::max( arraySize*elementSize + sizeof(xdr_size_t), this->getExpandSize() );
+		xdr_size_t reallocationSize = std::max<unsigned long>( arraySize*elementSize + sizeof(xdr_size_t), this->getExpandSize() );
 		XDR_STREAM( this->expandBuffer(reallocationSize) )
 	}
 
