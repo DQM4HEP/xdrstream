@@ -205,7 +205,7 @@ inline void printRawBuffer(char *pBuffer, xdr_size_t bufferSize , uint32_t retur
 {
 	std::cout << "buffer address : " << (void *) pBuffer << " size : " << bufferSize << std::endl;
 
-	for(int i=0 ; i<bufferSize ; i++)
+	for(xdr_size_t i=0 ; i<bufferSize ; i++)
 	{
 		printf("%2x", pBuffer[i]);
 
