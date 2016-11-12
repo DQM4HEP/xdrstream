@@ -1,0 +1,16 @@
+language: cpp
+
+sudo: not required
+
+matrix:      
+   include:   
+      - os: linux
+        compiler: gcc
+      - os: osx
+        compiler: clang
+        
+script:
+  - cd build  
+  - cmake ..
+  - make install
+        
