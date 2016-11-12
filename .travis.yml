@@ -2,16 +2,23 @@ language: cpp
 
 sudo: not required
 
-matrix:      
-   include:   
-      - os: linux
-        compiler: gcc
-      - os: osx
-        compiler: clang
+compilers:
+  - gcc
+  - clang
+
+os:
+  - linux
+  - osx
         
 script:
   - mkdir build
   - cd build  
   - cmake ..
   - make install
-        
+
+matrix:
+  include:
+    - os: osx
+      compiler: gcc
+    - os: linux
+      compiler: clang
