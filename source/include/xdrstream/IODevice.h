@@ -190,7 +190,7 @@ public:
 	 *  @param  size the array length
 	 */
 	template <typename T>
-	Status readStaticArray(T *pValue, xdr_size_t size);
+	Status readStaticArray(T *pValue, xdr_size_t arraySize);
 
 	/**
 	 *  @brief  Read an array from the device.
@@ -200,7 +200,7 @@ public:
 	 *  @param  size the array length to receive
 	 */
 	template <typename T>
-	Status readDynamicArray(T *&pValue, xdr_size_t &size);
+	Status readDynamicArray(T *&pValue, xdr_size_t &arraySize);
 
 	/**
 	 *  @brief  Read the address from the device
@@ -325,17 +325,17 @@ inline Status IODevice::read(T *pValue)
 //----------------------------------------------------------------------------------------------------
 
 template <typename T>
-inline Status IODevice::readStaticArray(T *pValue, xdr_size_t size)
+inline Status IODevice::readStaticArray(T *pValue, xdr_size_t arraySize)
 {
-	return this->readStaticArray( (void *) pValue, size, sizeof(T));
+	return this->readStaticArray( (void *) pValue, arraySize, sizeof(T));
 }
 
 //----------------------------------------------------------------------------------------------------
 
 template <typename T>
-inline Status IODevice::readDynamicArray(T *&pValue, xdr_size_t &size)
+inline Status IODevice::readDynamicArray(T *&pValue, xdr_size_t &arraySize)
 {
-	return this->readDynamicArray( (void *&) pValue, size, sizeof(T), & xdr_allocator_helper<T>::alloc);
+	return this->readDynamicArray( (void *&) pValue, arraySize, sizeof(T), & xdr_allocator_helper<T>::alloc);
 }
 
 //----------------------------------------------------------------------------------------------------
